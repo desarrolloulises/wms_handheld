@@ -1,0 +1,541 @@
+{% extends "layout_base.html" %}
+
+{% block title %}Reasignacion{% endblock %}
+{% block header_titulo %}REASIGNACION{% endblock %}
+
+{% block header_logout %}
+    <input type="button"
+           class="btn-logout"
+           value="[&#187;"
+           title="Cerrar sesion"
+           onclick="location.href='/logout';">
+{% endblock %}
+
+{% block estilos_extra %}
+<style type="text/css">
+    .header{
+        height: 55px;
+    }
+
+    .header .titulo {
+        margin-top: 15px;
+    }
+
+    .panel {
+        padding: 8px 10px 0px 10px;
+    }
+
+    /* ---------- Filas de informacion ---------- */
+    .fila {
+        width: 400px;
+        min-height: 18px;
+        font-size: 12px;
+        margin-bottom: 4px;
+        color: #003366;
+        word-wrap: break-word;
+    }
+
+    .fila-titulo {
+        font-size: 15px;
+        font-weight: bold;
+        color: #003366;
+        text-align: center;
+        margin-bottom: 2px;
+    }
+
+    .fila-subtitulo {
+        font-size: 13px;
+        font-weight: bold;
+        color: #003366;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .fila-info {
+        font-size: 12px;
+        color: #003366;
+        padding: 2px 0px;
+    }
+
+    .fila-info b {
+        color: #000000;
+    }
+
+    .fila-destacada {
+        font-size: 12px;
+        font-weight: bold;
+        color: #003366;
+        background-color: #e6eef6;
+        border: 1px solid #8aa2b8;
+        padding: 6px 8px;
+        margin-bottom: 6px;
+        text-align: center;
+    }
+
+    /* ---------- Input de escaneo ---------- */
+    .input-scan {
+        width: 400px;
+        height: 50px;
+        font-size: 14px;
+        font-weight: bold;
+        padding-left: 8px;
+        margin-top: 4px;
+        margin-bottom: 8px;
+    }
+
+    .input-scan:disabled {
+        background-color: #e6e6e6;
+        color: #888888;
+        border: 2px solid #aaaaaa;
+    }
+
+    .input-oculto {
+        display: none;
+    }
+
+    /* ---------- Linea de error ---------- */
+    .fila-error {
+        width: 400px;
+        min-height: 18px;
+        font-size: 12px;
+        font-weight: bold;
+        color: #aa0000;
+        text-align: center;
+        padding: 6px 0px;
+    }
+
+    /* ---------- Ayuda F1 ---------- */
+    .ayuda {
+        font-size: 10px;
+        color: #666666;
+        text-align: center;
+        margin-top: 12px;
+        margin-bottom: 10px;
+    }
+
+</style>
+{% endblock %}
+
+{% block head_extra %}
+<script type="text/javascript">
+
+    /* ============================================================
+       ESTADO GLOBAL DEL PROCESO
+       ============================================================
+       faseActual:
+         1 -> escaneando caja NUEVA
+         2 -> ya tenemos caja nueva, escaneando caja A REASIGNAR
+         3 -> proceso completado
+       ============================================================ */
+    var faseActual = 1;
+    var idCajaNuevaGuardada = "";
+    var procesoCompletado = false;
+
+    /* ============================================================
+       REFERENCIAS A ELEMENTOS DEL DOM
+       ============================================================ */
+    function $(id) { return document.getElementById(id); }
+
+    /* ============================================================
+       REPRODUCIR SONIDO (COMPATIBLE IE / CK3X)
+       ============================================================
+       En la CK3X el motor Trident no reproduce bien new Audio().
+       Usamos <bgsound>, que es la unica forma 100% confiable
+       en IE. Para permitir sonidos repetidos, eliminamos el
+       elemento anterior y creamos uno nuevo cada vez.
+       ============================================================ */
+    function reproducirSonido(archivo) {
+        try {
+            /* Eliminar bgsound anterior si existe */
+            var anterior = document.getElementById("bgsound-audio");
+            if (anterior && anterior.parentNode) {
+                anterior.parentNode.removeChild(anterior);
+            }
+
+            /* Crear nuevo bgsound */
+            var bg = document.createElement("bgsound");
+            bg.id = "bgsound-audio";
+            bg.src = "/static/" + archivo;
+            bg.loop = 1;
+            bg.volume = 0;   /* IE: 0 = maximo, -10000 = silencio */
+
+            document.body.appendChild(bg);
+        } catch (e) {
+            /* Si falla, no rompemos el flujo */
+        }
+    }
+
+    function sonidoError()   { reproducirSonido("error.wav"); }
+    function sonidoSuccess() { reproducirSonido("succes.wav"); }
+
+    /* ============================================================
+       FOCO EN EL INPUT
+       ============================================================ */
+    function enfocarInput() {
+        var input = $("codigo");
+        if (input && !input.className.match(/input-oculto/)) {
+            input.focus();
+        }
+    }
+
+    /* ============================================================
+       RENDERIZAR LOS DATOS DE LA API EN LAS FILAS 1-7
+       ============================================================ */
+    function renderizarDatos(data) {
+        /* Fila 1: titulo */
+        var el1 = $("fila-1");
+        el1.innerHTML = data.titulo ? data.titulo : "";
+        el1.className = data.titulo ? "fila fila-titulo" : "fila";
+
+        /* Fila 2: subtitulo */
+        var el2 = $("fila-2");
+        el2.innerHTML = data.subtitulo ? data.subtitulo : "";
+        el2.className = data.subtitulo ? "fila fila-subtitulo" : "fila";
+
+        /* Filas 3-7: ln3..ln7 */
+        var campos = ["ln3", "ln4", "ln5", "ln6", "ln7"];
+        for (var i = 0; i < campos.length; i++) {
+            var idFila = "fila-" + (i + 3);
+            var valor = data[campos[i]] ? data[campos[i]] : "";
+            var el = $(idFila);
+
+            if (valor) {
+                el.innerHTML = valor;
+                el.className = "fila fila-destacada";
+            } else {
+                el.innerHTML = "&nbsp;";
+                el.className = "fila";
+            }
+        }
+    }
+
+    /* ============================================================
+       MOSTRAR / OCULTAR INPUT
+       ============================================================ */
+    function mostrarInput() {
+        var input = $("codigo");
+        input.className = "input-scan";
+        input.disabled = false;
+        setTimeout(enfocarInput, 50);
+    }
+
+    function ocultarInput() {
+        var input = $("codigo");
+        input.className = "input-scan input-oculto";
+        input.disabled = true;
+    }
+
+    function deshabilitarInput() {
+        var input = $("codigo");
+        input.className = "input-scan";
+        input.disabled = true;
+    }
+
+    /* ============================================================
+       LIMPIAR INPUT Y ENFOCAR
+       ============================================================ */
+    function limpiarYEnfocar() {
+        var input = $("codigo");
+        input.value = "";
+        setTimeout(enfocarInput, 50);
+    }
+
+    /* ============================================================
+       MOSTRAR ERROR EN FILA 9
+       ============================================================ */
+    function mostrarError(msg) {
+        $("fila-9").innerHTML = msg ? msg : "";
+    }
+
+    function limpiarError() {
+        $("fila-9").innerHTML = "";
+    }
+
+    /* ============================================================
+       FASE 1: OBTENER INTERFAZ
+       ============================================================ */
+    function cargarInterfazInicial() {
+        faseActual = 1;
+        idCajaNuevaGuardada = "";
+        procesoCompletado = false;
+        limpiarError();
+        ocultarInput();
+
+        postJSON("/api/reasignacion/obtener-interfaz", {}, function (data) {
+            if (data.errId === 0) {
+                renderizarDatos(data);
+                mostrarInput();
+            } else {
+                renderizarDatos(data);
+                mostrarError(data.errMsg || "Error al obtener la interfaz");
+                ocultarInput();
+            }
+        });
+    }
+
+    /* ============================================================
+       FASE 2: CONSULTAR CAJA NUEVA
+       ============================================================ */
+    function consultarCajaNueva(idCaja) {
+        limpiarError();
+
+        postJSON("/api/reasignacion/consultar-caja-nueva",
+                 { idCajaNueva: idCaja },
+                 function (data) {
+
+            if (data.errId === 0) {
+                /* Exito */
+                if (data.ln4 && data.ln5) {
+                    /* Tenemos tienda -> pasamos a fase 3 */
+                    idCajaNuevaGuardada = idCaja;
+                    renderizarDatos(data);
+                    faseActual = 3;
+                    mostrarInput();
+                } else {
+                    /* Seguimos en fase 2 */
+                    renderizarDatos(data);
+                    faseActual = 2;
+                    mostrarInput();
+                }
+            } else {
+                /* Error */
+                sonidoError();
+                renderizarDatos(data);
+                mostrarError(data.errMsg || "Error al consultar la caja");
+                mostrarInput();
+            }
+        });
+    }
+
+    /* ============================================================
+       FASE 3: REASIGNAR CAJA
+       ============================================================ */
+    function reasignarCaja(idCajaAReasignar) {
+
+        /* Si ya se completo el proceso, no aceptar mas entradas */
+        if (procesoCompletado) {
+            sonidoError();
+            return;
+        }
+
+        limpiarError();
+
+        postJSON("/api/reasignacion/reasignar-caja",
+                 {
+                     idCajaNueva: idCajaNuevaGuardada,
+                     idCajaAReasignar: idCajaAReasignar
+                 },
+                 function (data) {
+
+            if (data.errId === 0) {
+
+                if (data.statusCaja === 1) {
+                    /* Encontramos la caja correcta, aun no completamos */
+                    sonidoSuccess();
+                    limpiarError();
+                    mostrarInput();
+
+                } else if (data.statusCaja === 2) {
+                    /* Proceso completado */
+                    sonidoSuccess();
+                    renderizarDatos(data);
+                    faseActual = 3;
+                    procesoCompletado = true;
+                    limpiarError();
+                    deshabilitarInput();
+
+                } else {
+                    /* statusCaja === 0: no es la caja que buscamos */
+                    limpiarError();
+                    mostrarInput();
+                }
+
+            } else {
+                sonidoError();
+                mostrarError(data.errMsg || "Error al reasignar la caja");
+                mostrarInput();
+            }
+        });
+    }
+
+    /* ============================================================
+       HELPER: POST JSON SIN LIBRERIAS (compatible IE)
+       ============================================================ */
+    function postJSON(url, payload, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("accept", "*/*");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        callback(data);
+                    } catch (e) {
+                        sonidoError();
+                        mostrarError("Respuesta invalida del servidor");
+                    }
+                } else {
+                    sonidoError();
+                    mostrarError("Error HTTP " + xhr.status);
+                }
+            }
+        };
+
+        xhr.send(JSON.stringify(payload));
+    }
+
+    /* ============================================================
+       MANEJO DEL ENTER EN EL INPUT
+       ============================================================ */
+    function teclaEnInput(e) {
+        e = e || window.event;
+        var codigo = e.keyCode || e.which;
+
+        if (codigo === 13) {
+            if (e.preventDefault) { e.preventDefault(); }
+            e.returnValue = false;
+
+            var input = $("codigo");
+            var valor = input.value.replace(/^\s+|\s+$/g, "");
+
+            if (valor === "") {
+                return false;
+            }
+
+            if (faseActual === 1 || faseActual === 2) {
+                consultarCajaNueva(valor);
+            } else if (faseActual === 3) {
+                reasignarCaja(valor);
+            }
+
+            limpiarYEnfocar();
+            return false;
+        }
+
+        return true;
+    }
+
+    /* ============================================================
+       F1: CONTROL POR FASE
+       ============================================================
+       Fase 1 -> regresa al menu (comportamiento del layout_base)
+       Fase 2 -> reinicia a fase 1 (obtener-interfaz)
+       Fase 3 -> reinicia a fase 1 (obtener-interfaz)
+       ============================================================ */
+    function manejarF1() {
+        if (faseActual === 1) {
+            /* Delegamos al layout_base: ir atras */
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = "/principal";
+            }
+        } else {
+            /* Reiniciar a fase 1 */
+            cargarInterfazInicial();
+        }
+    }
+
+    /* Sobreescribimos el handler global del layout SOLO en esta pagina */
+    document.onkeydown = function (e) {
+        e = e || window.event;
+        var codigo = e.keyCode || e.which;
+
+        if (codigo === 112) { /* F1 */
+            if (e.preventDefault) { e.preventDefault(); }
+            e.returnValue = false;
+            manejarF1();
+            return false;
+        }
+
+        /* Bloquear F2-F12 para que no interfieran */
+        if (codigo >= 113 && codigo <= 123) {
+            if (e.preventDefault) { e.preventDefault(); }
+            e.returnValue = false;
+            return false;
+        }
+    };
+
+    /* ============================================================
+       FORZAR FOCO (igual que el Angular)
+       ============================================================ */
+    function forzarEnfoque() {
+        var input = $("codigo");
+        if (input && !input.className.match(/input-oculto/)) {
+            setTimeout(function () { input.focus(); }, 50);
+        }
+    }
+
+    document.onclick = function () {
+        forzarEnfoque();
+    };
+
+    window.onfocus = function () {
+        forzarEnfoque();
+    };
+
+    /* ============================================================
+       AL CARGAR LA PAGINA
+       ============================================================ */
+    window.onload = function () {
+
+        /* Precargar sonidos para que la primera reproduccion
+           no tenga delay. Los dejamos con volumen al minimo. */
+        var precarga1 = document.createElement("bgsound");
+        precarga1.id = "precarga-error";
+        precarga1.src = "/static/error.wav";
+        precarga1.loop = 1;
+        precarga1.volume = -10000;
+        document.body.appendChild(precarga1);
+
+        var precarga2 = document.createElement("bgsound");
+        precarga2.id = "precarga-succes";
+        precarga2.src = "/static/succes.wav";
+        precarga2.loop = 1;
+        precarga2.volume = -10000;
+        document.body.appendChild(precarga2);
+
+        cargarInterfazInicial();
+        forzarEnfoque();
+    };
+
+</script>
+{% endblock %}
+
+{% block contenido %}
+
+    <div class="panel">
+
+        {# ---------- Fila 1: Titulo ---------- #}
+        <div id="fila-1" class="fila">&nbsp;</div>
+
+        {# ---------- Fila 2: Subtitulo ---------- #}
+        <div id="fila-2" class="fila">&nbsp;</div>
+
+        {# ---------- Filas 3-7: ln3..ln7 ---------- #}
+        <div id="fila-3" class="fila">&nbsp;</div>
+        <div id="fila-4" class="fila">&nbsp;</div>
+        <div id="fila-5" class="fila">&nbsp;</div>
+        <div id="fila-6" class="fila">&nbsp;</div>
+        <div id="fila-7" class="fila">&nbsp;</div>
+
+        {# ---------- Fila 8: Input de escaneo ---------- #}
+        <input type="text"
+               id="codigo"
+               name="codigo"
+               class="input-scan input-oculto"
+               autocomplete="off"
+               onkeydown="return teclaEnInput(event);">
+
+        {# ---------- Fila 9: Errores ---------- #}
+        <div id="fila-9" class="fila-error">&nbsp;</div>
+
+        {# ---------- Fila 10: Ayuda F1 ---------- #}
+        <p class="ayuda">F1 = Regresar</p>
+
+    </div>
+
+{% endblock %}

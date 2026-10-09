@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <meta name="viewport" content="width=455, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="MobileOptimized" content="455" />
+    <meta name="HandheldFriendly" content="true" />
+    <meta name="FitToScreen" content="YES" />
+
+    <title>{% block title %}WMS{% endblock %}</title>
+
+    <style type="text/css">
+        /* ============================================================ */
+        /* ESTILOS BASE COMPARTIDOS                                      */
+        /* ============================================================ */
+        body {
+            margin: 0px;
+            padding: 0px;
+            font-family: Arial;
+            font-size: 12px;
+            background-color: #f0f0f0;
+        }
+
+        /* ---------- Encabezado ---------- */
+        .header {
+            background-color: #003366;
+            color: #ffffff;
+            padding: 6px 8px;
+            height: 42px;
+            position: relative;
+        }
+
+        .header .titulo {
+            font-size: 12px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .header .usuario {
+            font-size: 11px;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* ---------- Boton logout ---------- */
+        .btn-logout {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 50px;
+            height: 50px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: #003366;
+            color: #ffffff;
+            border: 1px solid #8aa2b8;
+        }
+
+        /* ---------- Breadcrumb ---------- */
+        .breadcrumb {
+            background-color: #d9e2ec;
+            color: #003366;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-bottom: 1px solid #b0c0d0;
+        }
+
+        .breadcrumb a {
+            color: #003366;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* ---------- Contenido ---------- */
+        .contenido {
+            padding: 8px 10px;
+        }
+
+        .contenido-centrado {
+            text-align: center;
+        }
+
+        /* ---------- Botones ---------- */
+        .btn-nivel {
+            display: block;
+            width: 433px;
+            height: 44px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 12px;
+            margin-bottom: 6px;
+            background-color: #ffffff;
+            color: #003366;
+            border: 1px solid #8aa2b8;
+        }
+
+        /* ---------- Mensajes ---------- */
+        .sin-accesos {
+            color: #aa0000;
+            font-weight: bold;
+            padding: 16px 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .ayuda {
+            font-size: 10px;
+            color: #666666;
+            text-align: center;
+            margin-top: 8px;
+        }
+    </style>
+
+    {% block estilos_extra %}{% endblock %}
+
+    <script type="text/javascript">
+        /* ============================================================
+           TECLA F1 -> REGRESAR
+           ============================================================
+           Se comporta como "atras" en el navegador.
+           Si no hay historial previo, va al menu principal.
+           ============================================================ */
+        function irAtras() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = "/principal";
+            }
+        }
+
+        document.onkeydown = function (e) {
+            e = e || window.event;
+            var codigo = e.keyCode || e.which;
+
+            /* F1 = 112 */
+            if (codigo === 112) {
+                if (e.preventDefault) { e.preventDefault(); }
+                e.returnValue = false;
+                irAtras();
+                return false;
+            }
+        };
+    </script>
+
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+
+    <div class="header">
+        <span class="titulo">{% block header_titulo %}CEDIS - MENU{% endblock %}</span>
+
+        {% block header_usuario %}
+            {% if usuario %}
+                <span class="usuario">Usuario: {{ usuario }}</span>
+            {% endif %}
+        {% endblock %}
+
+        {% block header_logout %}
+            {% if mostrar_logout %}
+                <input type="button"
+                       class="btn-logout"
+                       value="[&#187;"
+                       title="Cerrar sesion"
+                       onclick="location.href='/logout';">
+            {% endif %}
+        {% endblock %}
+    </div>
+
+    {% block contenido %}{% endblock %}
+
+</body>
+
+</html>
