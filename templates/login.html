@@ -1,0 +1,108 @@
+{% extends "layout_base.html" %}
+
+{% block title %}WMS Handheld{% endblock %}
+{% block header_titulo %}WMS LOGIN{% endblock %}
+
+{% block header_usuario %}{% endblock %}
+{% block header_logout %}{% endblock %}
+
+{% block estilos_extra %}
+<style type="text/css">
+    .contenido{
+        margin-top: 50px;
+    }
+
+    .titulo{
+        text-align: center;
+    }
+
+    .campo {
+        width: 360px;
+        height: 50px;
+        font-size: 12px;
+        margin-bottom: 30px;
+    }
+
+    .boton {
+        width: 360px;
+        height: 50px;
+        font-size: 12px;
+        font-weight: bold;
+        background-color: #003366;
+        color: #ffffff;
+        border: 1px solid #002244;
+        margin-top: 8px;
+    }
+
+    .error {
+        color: #aa0000;
+        font-weight: bold;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .label {
+        font-size: 12px;
+        font-weight: bold;
+        color: #003366;
+        text-align: left;
+        display: block;
+        width: 360px;
+        margin: 0 auto 3px auto;
+    }
+</style>
+{% endblock %}
+
+{# ============================================================
+   head_extra UNICO:
+   - sonido de error si aplica
+   - desactivar F1 en login (no tiene sentido regresar)
+   ============================================================ #}
+{% block head_extra %}
+    {% if error %}
+        <bgsound src="/static/error.wav" loop="1">
+    {% endif %}
+
+    <script type="text/javascript">
+        document.onkeydown = function (e) {
+            e = e || window.event;
+            var codigo = e.keyCode || e.which;
+
+            /* F1 = 112 -> en login lo anulamos */
+            if (codigo === 112) {
+                if (e.preventDefault) { e.preventDefault(); }
+                e.returnValue = false;
+                return false;
+            }
+        };
+    </script>
+{% endblock %}
+
+{% block contenido %}
+    <div class="contenido contenido-centrado">
+
+        {% if error %}
+            <p class="error">{{ mensaje }}</p>
+        {% endif %}
+
+        <form method="post" action="/">
+
+            <span class="label">Usuario</span>
+            <input type="text"
+                   name="usuario"
+                   value="{{ usuario }}"
+                   class="campo">
+
+            <span class="label">Contraseña</span>
+            <input type="password"
+                   name="password"
+                   class="campo">
+
+            <input type="submit"
+                   value="ENTRAR"
+                   class="boton">
+
+        </form>
+
+    </div>
+{% endblock %}

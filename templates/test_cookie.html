@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+
+<head>
+
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <title>Prueba Cookies</title>
+
+
+</head>
+
+<body>
+
+
+    <h3>PRUEBA DE COOKIES</h3>
+
+
+    {% if mensaje %}
+
+    <p>
+        <b>{{ mensaje }}</b>
+    </p>
+
+    {% endif %}
+
+
+    <p>
+        Usuario actual:
+    </p>
+
+    <p>
+        <b>{{ usuario }}</b>
+    </p>
+
+
+    <hr>
+
+
+    <form method="get" action="/test-cookie">
+
+        <input type="hidden" name="accion" value="guardar">
+
+        <input type="submit" value="GUARDAR COOKIE">
+
+    </form>
+
+
+    <br>
+
+
+    <form method="get" action="/test-cookie">
+
+        <input type="hidden" name="accion" value="leer">
+
+        <input type="submit" value="LEER COOKIE">
+
+    </form>
+
+
+    <br>
+
+
+    <form method="get" action="/test-cookie">
+
+        <input type="hidden" name="accion" value="borrar">
+
+        <input type="submit" value="BORRAR COOKIE">
+
+    </form>
+
+
+</body>
+
+</html>

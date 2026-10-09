@@ -1,0 +1,69 @@
+{% extends "layout_base.html" %}
+
+{% block title %}En construccion{% endblock %}
+{% block header_titulo %}WMS{% endblock %}
+
+{% block header_logout %}
+    <input type="button"
+           class="btn-logout"
+           value="[&#187;"
+           title="Cerrar sesion"
+           onclick="location.href='/logout';">
+{% endblock %}
+
+{% block estilos_extra %}
+<style type="text/css">
+    .icono {
+        font-size: 36px;
+        font-weight: bold;
+        color: #cc8800;
+        margin-bottom: 8px;
+    }
+
+    .titulo-msg {
+        font-size: 12px;
+        font-weight: bold;
+        color: #003366;
+        margin-bottom: 10px;
+    }
+
+    .mensaje {
+        font-size: 12px;
+        color: #333333;
+        margin-bottom: 14px;
+    }
+
+    .detalle {
+        font-size: 11px;
+        color: #666666;
+        background-color: #e6e6e6;
+        padding: 6px;
+        margin-bottom: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block contenido %}
+    <div class="contenido contenido-centrado" style="padding: 16px 10px;">
+
+        <div class="icono">!</div>
+
+        <p class="titulo-msg">EN CONSTRUCCION</p>
+
+        <p class="mensaje">
+            Esta funcionalidad se encuentra<br>
+            en proceso de desarrollo.
+        </p>
+
+        <div class="detalle">
+            Nivel: {{ nivel_id }}<br>
+            Subnivel: {{ subnivel_id }}
+            {% if subacceso_id is not none %}
+                <br>Subacceso: {{ subacceso_id }}
+            {% endif %}
+        </div>
+
+        <p class="ayuda">Presione F1 para regresar</p>
+
+    </div>
+{% endblock %}

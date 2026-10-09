@@ -1,0 +1,149 @@
+{% extends "layout_base.html" %}
+
+{% block title %}Menu{% endblock %}
+{% block header_titulo %}CEDIS - MENU{% endblock %}
+
+{% block header_logout %}
+    <input type="button"
+           class="btn-logout"
+           value="[&#187;"
+           title="Cerrar sesion"
+           onclick="location.href='/logout';">
+{% endblock %}
+
+{% block estilos_extra %}
+<style type="text/css">
+    /* (puedes dejar vacio o poner estilos especificos del menu) */
+</style>
+{% endblock %}
+
+{% block head_extra %}
+<script type="text/javascript">
+    /* ============================================================
+       CONTROL DE F1 EN EL MENU
+       ============================================================
+       Si estamos en el menu raiz (sin nivel_actual), F1 no hace
+       nada: el usuario debe cerrar sesion o navegar a un nivel.
+
+       Si estamos en un nivel o subnivel, F1 va hacia atras.
+       ============================================================ */
+    function menuEnRaiz() {
+        var marca = document.getElementById("marca-menu-raiz");
+        return marca && marca.value === "1";
+    }
+
+    document.onkeydown = function (e) {
+        e = e || window.event;
+        var codigo = e.keyCode || e.which;
+
+        if (codigo === 112) { /* F1 */
+            if (e.preventDefault) { e.preventDefault(); }
+            e.returnValue = false;
+
+            if (menuEnRaiz()) {
+                /* En menu raiz F1 no hace nada */
+                return false;
+            }
+
+            /* En nivel/subnivel: ir atras */
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = "/principal";
+            }
+            return false;
+        }
+
+        return true;
+    };
+</script>
+{% endblock %}
+
+{% block contenido %}
+
+    {# ---------- Marca para JS: menu raiz o no ---------- #}
+    <input type="hidden"
+           id="marca-menu-raiz"
+           value="{% if not nivel_actual %}1{% else %}0{% endif %}">
+
+    {# ---------- Breadcrumb ---------- #}
+    <div class="breadcrumb">
+        {% if not nivel_actual %}
+            Inicio
+        {% elif not subnivel_actual %}
+            <a href="/principal">Inicio</a> &gt; {{ nivel_actual.descripcion }}
+        {% else %}
+            <a href="/principal">Inicio</a> &gt;
+            <a href="/menu/nivel/{{ nivel_actual.id }}">{{ nivel_actual.descripcion }}</a> &gt;
+            {{ subnivel_actual.descripcion }}
+        {% endif %}
+    </div>
+
+    {# ---------- Contenido ---------- #}
+    <div class="contenido">
+
+        {% if not nivel_actual %}
+
+            {% if accesos and accesos|length > 0 %}
+
+                {% for nivel in accesos %}
+                    <input type="button"
+                           class="btn-nivel"
+                           value="{{ nivel.descripcion }}"
+                           onclick="location.href='/menu/nivel/{{ nivel.id }}';">
+                {% endfor %}
+
+                <p class="ayuda">Seleccione una opcion</p>
+
+            {% else %}
+                <p class="sin-accesos">No tiene accesos asignados.</p>
+            {% endif %}
+
+        {% elif not subnivel_actual %}
+
+            {% if nivel_actual.subNiveles and nivel_actual.subNiveles|length > 0 %}
+
+                {% for sub in nivel_actual.subNiveles %}
+
+                    {% if sub.subAccesos and sub.subAccesos|length > 0 %}
+                        <input type="button"
+                               class="btn-nivel"
+                               value="{{ sub.descripcion }} &gt;"
+                               onclick="location.href='/menu/nivel/{{ nivel_actual.id }}/subnivel/{{ sub.id }}';">
+                    {% else %}
+                        <input type="button"
+                               class="btn-nivel"
+                               value="{{ sub.descripcion }}"
+                               onclick="location.href='/nivel/{{ nivel_actual.id }}/subnivel/{{ sub.id }}';">
+                    {% endif %}
+
+                {% endfor %}
+
+            {% else %}
+                <p class="sin-accesos">Este nivel no tiene subniveles.</p>
+            {% endif %}
+
+            <p class="ayuda">F1 = Volver al inicio</p>
+
+        {% else %}
+
+            {% if subnivel_actual.subAccesos and subnivel_actual.subAccesos|length > 0 %}
+
+                {% for acc in subnivel_actual.subAccesos %}
+                    <input type="button"
+                           class="btn-nivel"
+                           value="{{ acc.descripcion }}"
+                           onclick="location.href='/nivel/{{ nivel_actual.id }}/subnivel/{{ subnivel_actual.id }}/subacceso/{{ acc.id }}';">
+                {% endfor %}
+
+            {% else %}
+                <p class="sin-accesos">Este subnivel no tiene accesos.</p>
+            {% endif %}
+
+            <p class="ayuda">F1 = Volver a {{ nivel_actual.descripcion }}</p>
+
+        {% endif %}
+
+    </div>
+
+{% endblock %}
