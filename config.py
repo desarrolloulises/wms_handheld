@@ -15,7 +15,7 @@ BASE_URL_REASIGNACION = "http://192.168.102.81:5242/cedis/reasignacion-caja"
 #   Clave "nivel-subnivel-subacceso"     -> subacceso especifico
 #
 # Ejemplo cuando tengas listo el HTML del nivel 2999 subnivel 1:
-#   "2999-1": "prueba_desarrollo.html",
+#   "2999-1": "modulo.html",
 # ============================================================
 
 MAPA_RUTAS = {
